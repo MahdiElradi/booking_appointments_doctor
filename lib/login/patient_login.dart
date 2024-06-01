@@ -1,6 +1,7 @@
+import 'package:booking_appointments_doctor/login/registeration_patient.dart';
 import 'package:flutter/material.dart';
 
-import '../home_screen/booking_screen.dart';
+import '../home_screen/book_appointment_screen.dart';
 
 class PatientLoginScreen extends StatefulWidget {
   const PatientLoginScreen({super.key});
@@ -102,13 +103,35 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
                       obscureText: true,
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _login();
-                        }
-                      },
-                      child: const Text('Login'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                _login();
+                              }
+                            },
+                            child: const Text('Login'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 120,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegistrationPatient()),
+                              );
+                            },
+                            child: const Text('Register'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

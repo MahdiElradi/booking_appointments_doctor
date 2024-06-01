@@ -1,5 +1,10 @@
+import 'package:booking_appointments_doctor/models/doctors.dart';
+import 'package:booking_appointments_doctor/models/speciality_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+
+import '../cubit/cubit.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -18,21 +23,117 @@ class _BookingScreenState extends State<BookingScreen> {
   String? _selectedTime;
 
   String? _selectedDoctor;
+  String? _selectedSpeciality;
 
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _dates = ['2024-06-01', '2024-06-02', '2024-06-03'];
+  // final List<String> _dates = ['2024-06-01', '2024-06-02', '2024-06-03'];
+  List<String> dates = [];
+  // final List<String> _times = ['10:00 AM', '11:00 AM', '12:00 PM'];
+  List<String> _times = [];
+  // final List<String> _speciality = [];
 
-  final List<String> _times = ['10:00 AM', '11:00 AM', '12:00 PM'];
+  // final List<String> _doctor = [];
 
-  final List<String> _doctor = [
-    'Ahmed',
-    'Monad',
-    'Omer',
-    'Ali',
-    'Mohamed',
-    'Hassan'
-  ];
+  late List<SpecialityModel> specialityModel = [];
+  late List<DoctorsModel> doctorsModel = [];
+  bool loading = false;
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () {
+      getSpecialitiesList();
+      getDoctorsList();
+    });
+  }
+
+  Future<void> getSpecialitiesList() async {
+    setState(() {
+      loading = true;
+    });
+
+    // specialities
+    if (!mounted) return;
+    specialityModel =
+        await BlocProvider.of<AppCubit>(context).emitGetAllSpecialities();
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+    }
+
+    // specialities
+    if (!mounted) return;
+    doctorsModel = await BlocProvider.of<AppCubit>(context).emitGetAllDoctors();
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
+
+  Future<void> getDoctorsList() async {
+    try {
+      setState(() {
+        loading = true;
+      });
+      if (!mounted) return;
+      doctorsModel =
+          await BlocProvider.of<AppCubit>(context).emitGetAllDoctors();
+      // if (doctorsModel != null && doctorsModel.isNotEmpty) {
+      //   String doctorId = doctorsModel[0].id.toString();
+      //   getDatesOfDoctors(doctorId);
+      // }
+    } catch (e) {
+      print('Error getting doctors list: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> getDatesOfDoctors(doctorId) async {
+    try {
+      setState(() {
+        loading = true;
+      });
+      if (!mounted) return;
+      dates.clear();
+      dates = await BlocProvider.of<AppCubit>(context)
+          .emitGetDatesOfDoctors(doctorId);
+    } catch (e) {
+      print('Error getting dates of doctor: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> getTimesOfDoctors(doctorId, date) async {
+    try {
+      setState(() {
+        loading = true;
+      });
+      if (!mounted) return;
+      _times.clear();
+      _times = await BlocProvider.of<AppCubit>(context)
+          .emitGetTimesOfDoctors(doctorId, date);
+    } catch (e) {
+      print('Error getting times of doctor: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
 
   _onSubmit() {}
 
@@ -125,6 +226,26 @@ class _BookingScreenState extends State<BookingScreen> {
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                         icon: Icon(Icons.calendar_today, color: Colors.white),
+                        labelText: 'Speciality',
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      value: _selectedSpeciality,
+                      onChanged: (String? newValue) {
+                        _selectedSpeciality = newValue;
+                      },
+                      items: specialityModel.map<DropdownMenuItem<String>>(
+                          (SpecialityModel value) {
+                        return DropdownMenuItem<String>(
+                          value: value.speciality,
+                          child: Text(value.speciality.toString()),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        icon: Icon(Icons.calendar_today, color: Colors.white),
                         labelText: 'Doctor',
                         filled: true,
                         fillColor: Colors.white,
@@ -133,34 +254,55 @@ class _BookingScreenState extends State<BookingScreen> {
                       onChanged: (String? newValue) {
                         _selectedDoctor = newValue;
                       },
-                      items:
-                          _doctor.map<DropdownMenuItem<String>>((String value) {
+                      items: doctorsModel
+                          .map<DropdownMenuItem<String>>((DoctorsModel value) {
                         return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
+                          value: value.doctorName,
+                          child: Text(value.doctorName.toString()),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
+                    TextFormField(
+                      controller: _dateOfBirthController,
                       decoration: const InputDecoration(
                         icon: Icon(Icons.calendar_today, color: Colors.white),
                         labelText: 'Date',
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      value: _selectedDate,
-                      onChanged: (String? newValue) {
-                        _selectedDate = newValue;
-                      },
-                      items:
-                          _dates.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
                         );
-                      }).toList(),
+                        if (date != null) {
+                          _dateOfBirthController.text =
+                              _dateFormatter.format(date);
+                        }
+                      },
                     ),
+                    // DropdownButtonFormField<String>(
+                    //   decoration: const InputDecoration(
+                    //     icon: Icon(Icons.calendar_today, color: Colors.white),
+                    //     labelText: 'Date',
+                    //     filled: true,
+                    //     fillColor: Colors.white,
+                    //   ),
+                    //   value: _selectedDate,
+                    //   onChanged: (String? newValue) {
+                    //     _selectedDate = newValue;
+                    //   },
+                    //   items:
+                    //       dates.map<DropdownMenuItem<String>>((String value) {
+                    //     return DropdownMenuItem<String>(
+                    //       value: value,
+                    //       child: Text(value),
+                    //     );
+                    //   }).toList(),
+                    // ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(

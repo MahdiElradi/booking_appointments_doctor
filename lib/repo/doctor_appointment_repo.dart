@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:booking_appointments_doctor/models/speciality_model.dart';
 import 'package:http/http.dart' as http;
 
 class DoctorAppointmentRepo {
@@ -19,6 +20,21 @@ class DoctorAppointmentRepo {
       return await response.stream.bytesToString();
     } else {
       return response.reasonPhrase ?? 'Unknown error';
+    }
+  }
+
+  // get specializations
+  final String apiUrl =
+      'https://masoudozel-001-site1.ktempurl.com/api/Patient/GetSpeciality';
+
+  Future<List<SpecialityModel>> fetchSpecializations() async {
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      return data.map((json) => SpecialityModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load specializations');
     }
   }
 }
