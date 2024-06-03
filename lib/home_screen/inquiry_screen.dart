@@ -1,4 +1,8 @@
+import 'package:booking_appointments_doctor/cubit/cubit.dart';
+import 'package:booking_appointments_doctor/login/doctor_login.dart';
 import 'package:flutter/material.dart';
+
+import '../cache_helper.dart';
 
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
@@ -8,6 +12,9 @@ class InquiryScreen extends StatefulWidget {
 }
 
 class _InquiryScreenState extends State<InquiryScreen> {
+  String _searchName = '';
+  String _searchPhone = '';
+  bool isLogin = false;
   final List<Map<String, String>> _appointments = [
     {
       'name': 'John Doe',
@@ -33,11 +40,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
       'date': '2024-06-02',
       'time': '11:00 AM',
     },
-    // Add more appointments here
   ];
-
-  String _searchName = '';
-  String _searchPhone = '';
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +54,24 @@ class _InquiryScreenState extends State<InquiryScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {},
+            icon: const Row(
+              children: [
+                Text('Logout',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
+                SizedBox(width: 5),
+                Icon(Icons.logout, size: 20, color: Colors.white),
+              ],
+            ),
+            onPressed: () {
+              CacheHelper.removeData(key: 'id').then((value) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DoctorLoginScreen(),
+                  ),
+                );
+              });
+            },
           ),
         ],
       ),
@@ -74,10 +93,13 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 children: <Widget>[
                   TextFormField(
                     decoration: const InputDecoration(
-                      icon: Icon(Icons.search, color: Colors.white),
-                      labelText: 'Search by Name',
+                      hintText: 'Search by Name',
                       filled: true,
                       fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -85,39 +107,150 @@ class _InquiryScreenState extends State<InquiryScreen> {
                       });
                     },
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      icon: Icon(Icons.phone, color: Colors.white),
-                      labelText: 'Search by Phone',
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchPhone = value;
-                      });
-                    },
-                  ),
                   const SizedBox(height: 20),
+                  // Expanded(
+                  //   child: ListView.builder(
+                  //     itemCount: _filteredAppointments().length,
+                  //     itemBuilder: (context, index) {
+                  //       final appointment = _filteredAppointments()[index];
+                  //       return Card(
+                  //         child: Column(
+                  //           children: [
+                  //             ListTile(
+                  //               leading: const Icon(Icons.person),
+                  //               title: Text(appointment['name']!),
+                  //               subtitle: Column(
+                  //                 crossAxisAlignment: CrossAxisAlignment.start,
+                  //                 children: [
+                  //                   Text('Phone: ${appointment['phone']}'),
+                  //                   Text('Date: ${appointment['date']}'),
+                  //                   Text('Time: ${appointment['time']}'),
+                  //                 ],
+                  //               ),
+                  //             ),
+                  //             Row(
+                  //               mainAxisAlignment:
+                  //                   MainAxisAlignment.spaceBetween,
+                  //               children: [
+                  //                 Expanded(
+                  //                   child: Container(
+                  //                     height: 25,
+                  //                     margin:
+                  //                         const EdgeInsets.all(5), // Add margin
+                  //                     decoration: BoxDecoration(
+                  //                       color: Colors.green,
+                  //                       borderRadius: BorderRadius.circular(8),
+                  //                     ),
+                  //                     child: MaterialButton(
+                  //                       child: const Text('Accept',
+                  //                           style:
+                  //                               TextStyle(color: Colors.white)),
+                  //                       onPressed: () {},
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //                 Expanded(
+                  //                   child: Container(
+                  //                     height: 25,
+                  //                     margin: const EdgeInsets.all(5),
+                  //                     decoration: BoxDecoration(
+                  //                       color: Colors.red,
+                  //                       borderRadius: BorderRadius.circular(8),
+                  //                     ),
+                  //                     child: MaterialButton(
+                  //                       child: const Text('Reject',
+                  //                           style:
+                  //                               TextStyle(color: Colors.white)),
+                  //                       onPressed: () {},
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       );
+                  //     },
+                  //   ),
+                  // ),
                   Expanded(
                     child: ListView.builder(
                       itemCount: _filteredAppointments().length,
                       itemBuilder: (context, index) {
                         final appointment = _filteredAppointments()[index];
                         return Card(
-                          color: Colors.white.withOpacity(0.8),
-                          child: ListTile(
-                            leading: const Icon(Icons.person),
-                            title: Text(appointment['name']!),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Phone: ${appointment['phone']}'),
-                                Text('Date: ${appointment['date']}'),
-                                Text('Time: ${appointment['time']}'),
-                              ],
-                            ),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.person),
+                                title: Text(appointment['name']!),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Phone: ${appointment['phone']}'),
+                                    Text('Date: ${appointment['date']}'),
+                                    Text('Time: ${appointment['time']}'),
+                                  ],
+                                ),
+                              ),
+                              if (appointment['isAccepted'] !=
+                                  "true") // Add this line
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        height: 25,
+                                        margin: const EdgeInsets.all(
+                                            5), // Add margin
+                                        decoration: BoxDecoration(
+                                          color: Colors.green,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: MaterialButton(
+                                          child: const Text('Accept',
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                          onPressed: () async {
+                                            await AppCubit.get(context)
+                                                .updateDoctorStatus("0");
+                                            setState(() {
+                                              appointment['isAccepted'] =
+                                                  "true";
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        height: 25,
+                                        margin: const EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: MaterialButton(
+                                          child: const Text('Reject',
+                                              style: TextStyle(
+                                                  color: Colors.white)),
+                                          onPressed: () async {
+                                            await AppCubit.get(context)
+                                                .updateDoctorStatus("1");
+                                            setState(() {
+                                              appointment['isAccepted'] =
+                                                  "false";
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
                         );
                       },
@@ -137,8 +270,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
       final nameMatch = appointment['name']!
           .toLowerCase()
           .contains(_searchName.toLowerCase());
-      final phoneMatch = appointment['phone']!.contains(_searchPhone);
-      return nameMatch && phoneMatch;
+      // final phoneMatch = appointment['phone']!.contains(_searchPhone);
+      return nameMatch;
+      // && phoneMatch;
     }).toList();
   }
 }

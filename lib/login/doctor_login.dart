@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../cache_helper.dart';
+import '../cubit/cubit.dart';
 import '../home_screen/inquiry_screen.dart';
 
 class DoctorLoginScreen extends StatefulWidget {
@@ -13,13 +15,60 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool isLogin = false;
 
-  void _login() {
-    final username = _usernameController.text;
-    final password = _passwordController.text;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => InquiryScreen()),
+  void _login() async {
+    setState(() {
+      isLogin = true;
+    });
+
+    try {
+      final value = await AppCubit.get(context)
+          .emitLoginDoctor(_usernameController.text, _passwordController.text);
+      print('Received value: $value');
+
+      // Ensure CacheHelper is initialized
+      await CacheHelper.init();
+      print('CacheHelper initialized');
+
+      // Save data to SharedPreferences
+      await CacheHelper.saveData(key: 'doctorId', value: value.doctorId);
+      print('Saved data: ${value.doctorId}');
+
+      // Navigate to InquiryScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const InquiryScreen(),
+        ),
+      );
+
+      print('Login successful');
+      print('Doctor ID: ${value.doctorId}');
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    } finally {
+      setState(() {
+        isLogin = false;
+      });
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -75,8 +124,14 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: _login,
-                      child: const Text('Login'),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _login();
+                        }
+                      },
+                      child: isLogin
+                          ? const CircularProgressIndicator()
+                          : const Text('Login'),
                     ),
                   ],
                 ),

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../cache_helper.dart';
 import '../cubit/cubit.dart';
+import '../login/patient_login.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -44,6 +46,7 @@ class _BookingScreenState extends State<BookingScreen> {
     Future.delayed(Duration.zero, () {
       getSpecialitiesList();
       getDoctorsList();
+      getTimesOfDoctors('1', '2024-06-01');
     });
   }
 
@@ -145,6 +148,7 @@ class _BookingScreenState extends State<BookingScreen> {
     super.dispose();
   }
 
+  final userName = CacheHelper.getData(key: 'userName');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,8 +161,24 @@ class _BookingScreenState extends State<BookingScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {},
+            icon: const Row(
+              children: [
+                Text('Logout',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
+                SizedBox(width: 5),
+                Icon(Icons.logout, size: 20, color: Colors.white),
+              ],
+            ),
+            onPressed: () {
+              CacheHelper.removeData(key: 'id').then((value) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PatientLoginScreen(),
+                  ),
+                );
+              });
+            },
           ),
         ],
       ),

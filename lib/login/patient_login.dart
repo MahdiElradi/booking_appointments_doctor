@@ -1,6 +1,8 @@
 import 'package:booking_appointments_doctor/login/registeration_patient.dart';
 import 'package:flutter/material.dart';
 
+import '../cache_helper.dart';
+import '../cubit/cubit.dart';
 import '../home_screen/book_appointment_screen.dart';
 
 class PatientLoginScreen extends StatefulWidget {
@@ -14,42 +16,55 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool isLogin = false;
 
-  void _login() {
-    final username = _usernameController.text;
-    final password = _passwordController.text;
+  void _login() async {
+    setState(() {
+      isLogin = true;
+    });
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const BookingScreen()),
+    try {
+      final value = await AppCubit.get(context)
+          .emitLoginPatient(_usernameController.text, _passwordController.text);
+
+      // Save data to SharedPreferences
+      await CacheHelper.saveData(key: 'patientId', value: value.patientId);
+
+      // Navigate to BookingScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BookingScreen(),
+        ),
+      );
+
+      print('Login successful');
+      print('User ID: ${value.patientId}');
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    } finally {
+      setState(() {
+        isLogin = false;
+      });
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
     );
-    // if (username == 'doctor' && password == '123') {
-    //   Navigator.push(
-    //     context,
-    //     MaterialPageRoute(builder: (context) => BookingScreen()),
-    //   );
-    // } else if (username == 'user' && password == '123') {
-    //   Navigator.push(
-    //     context,
-    //     MaterialPageRoute(builder: (context) => BookingScreen()),
-    //   );
-    // } else {
-    //   showDialog(
-    //     context: context,
-    //     builder: (context) => AlertDialog(
-    //       title: const Text('Error'),
-    //       content: const Text('Invalid username or password'),
-    //       actions: <Widget>[
-    //         TextButton(
-    //           child: const Text('OK'),
-    //           onPressed: () {
-    //             Navigator.of(context).pop();
-    //           },
-    //         ),
-    //       ],
-    //     ),
-    //   );
-    // }
   }
 
   @override
@@ -114,7 +129,9 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
                                 _login();
                               }
                             },
-                            child: const Text('Login'),
+                            child: isLogin
+                                ? const CircularProgressIndicator()
+                                : const Text('Login'),
                           ),
                         ),
                         SizedBox(
