@@ -1,1 +1,0 @@
-const getSpeciality = 'GetSpeciality';

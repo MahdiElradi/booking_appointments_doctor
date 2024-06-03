@@ -3,6 +3,7 @@ import 'package:booking_appointments_doctor/login/doctor_login.dart';
 import 'package:flutter/material.dart';
 
 import '../cache_helper.dart';
+import '../models/doctor_inquiry_model.dart';
 
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
@@ -13,34 +14,33 @@ class InquiryScreen extends StatefulWidget {
 
 class _InquiryScreenState extends State<InquiryScreen> {
   String _searchName = '';
-  String _searchPhone = '';
   bool isLogin = false;
-  final List<Map<String, String>> _appointments = [
-    {
-      'name': 'John Doe',
-      'phone': '123-456-7890',
-      'date': '2024-06-01',
-      'time': '10:00 AM',
-    },
-    {
-      'name': 'Jane Smith',
-      'phone': '098-765-4321',
-      'date': '2024-06-02',
-      'time': '11:00 AM',
-    },
-    {
-      'name': 'Jane Smith',
-      'phone': '098-765-4321',
-      'date': '2024-06-02',
-      'time': '11:00 AM',
-    },
-    {
-      'name': 'Jane Doe',
-      'phone': '098-765-4321',
-      'date': '2024-06-02',
-      'time': '11:00 AM',
-    },
-  ];
+
+  List<TotalAppointmentsModel> _appointments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppointments();
+  }
+
+  Future<void> _fetchAppointments() async {
+    final appointments = await AppCubit.get(context).getAllAppointments(11);
+    setState(() {
+      _appointments = appointments;
+    });
+  }
+
+  List<TotalAppointmentsModel> _filteredAppointments() {
+    if (_searchName.isEmpty) return _appointments;
+    return _appointments.where((appointment) {
+      if (appointment.doctorName == null) return false;
+      final nameMatch = appointment.doctorName
+          ?.toLowerCase()
+          .contains(_searchName.toLowerCase());
+      return nameMatch ?? false;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,151 +108,12 @@ class _InquiryScreenState extends State<InquiryScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  // Expanded(
-                  //   child: ListView.builder(
-                  //     itemCount: _filteredAppointments().length,
-                  //     itemBuilder: (context, index) {
-                  //       final appointment = _filteredAppointments()[index];
-                  //       return Card(
-                  //         child: Column(
-                  //           children: [
-                  //             ListTile(
-                  //               leading: const Icon(Icons.person),
-                  //               title: Text(appointment['name']!),
-                  //               subtitle: Column(
-                  //                 crossAxisAlignment: CrossAxisAlignment.start,
-                  //                 children: [
-                  //                   Text('Phone: ${appointment['phone']}'),
-                  //                   Text('Date: ${appointment['date']}'),
-                  //                   Text('Time: ${appointment['time']}'),
-                  //                 ],
-                  //               ),
-                  //             ),
-                  //             Row(
-                  //               mainAxisAlignment:
-                  //                   MainAxisAlignment.spaceBetween,
-                  //               children: [
-                  //                 Expanded(
-                  //                   child: Container(
-                  //                     height: 25,
-                  //                     margin:
-                  //                         const EdgeInsets.all(5), // Add margin
-                  //                     decoration: BoxDecoration(
-                  //                       color: Colors.green,
-                  //                       borderRadius: BorderRadius.circular(8),
-                  //                     ),
-                  //                     child: MaterialButton(
-                  //                       child: const Text('Accept',
-                  //                           style:
-                  //                               TextStyle(color: Colors.white)),
-                  //                       onPressed: () {},
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //                 Expanded(
-                  //                   child: Container(
-                  //                     height: 25,
-                  //                     margin: const EdgeInsets.all(5),
-                  //                     decoration: BoxDecoration(
-                  //                       color: Colors.red,
-                  //                       borderRadius: BorderRadius.circular(8),
-                  //                     ),
-                  //                     child: MaterialButton(
-                  //                       child: const Text('Reject',
-                  //                           style:
-                  //                               TextStyle(color: Colors.white)),
-                  //                       onPressed: () {},
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //               ],
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       );
-                  //     },
-                  //   ),
-                  // ),
                   Expanded(
                     child: ListView.builder(
                       itemCount: _filteredAppointments().length,
                       itemBuilder: (context, index) {
                         final appointment = _filteredAppointments()[index];
-                        return Card(
-                          child: Column(
-                            children: [
-                              ListTile(
-                                leading: const Icon(Icons.person),
-                                title: Text(appointment['name']!),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Phone: ${appointment['phone']}'),
-                                    Text('Date: ${appointment['date']}'),
-                                    Text('Time: ${appointment['time']}'),
-                                  ],
-                                ),
-                              ),
-                              if (appointment['isAccepted'] !=
-                                  "true") // Add this line
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        height: 25,
-                                        margin: const EdgeInsets.all(
-                                            5), // Add margin
-                                        decoration: BoxDecoration(
-                                          color: Colors.green,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: MaterialButton(
-                                          child: const Text('Accept',
-                                              style: TextStyle(
-                                                  color: Colors.white)),
-                                          onPressed: () async {
-                                            await AppCubit.get(context)
-                                                .updateDoctorStatus("0");
-                                            setState(() {
-                                              appointment['isAccepted'] =
-                                                  "true";
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Container(
-                                        height: 25,
-                                        margin: const EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: MaterialButton(
-                                          child: const Text('Reject',
-                                              style: TextStyle(
-                                                  color: Colors.white)),
-                                          onPressed: () async {
-                                            await AppCubit.get(context)
-                                                .updateDoctorStatus("1");
-                                            setState(() {
-                                              appointment['isAccepted'] =
-                                                  "false";
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                            ],
-                          ),
-                        );
+                        return buildTotalAppointmentsCard(appointment, context);
                       },
                     ),
                   ),
@@ -265,14 +126,84 @@ class _InquiryScreenState extends State<InquiryScreen> {
     );
   }
 
-  List<Map<String, String>> _filteredAppointments() {
-    return _appointments.where((appointment) {
-      final nameMatch = appointment['name']!
-          .toLowerCase()
-          .contains(_searchName.toLowerCase());
-      // final phoneMatch = appointment['phone']!.contains(_searchPhone);
-      return nameMatch;
-      // && phoneMatch;
-    }).toList();
+  Card buildTotalAppointmentsCard(
+      TotalAppointmentsModel appointment, BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: Text('Patient Name: ${appointment.patientName}'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Doctor Name: ${appointment.doctorName}'),
+                Text('Created Date: ${appointment.createdDate}'),
+                Text('Selected Date: ${appointment.selectedDate}'),
+                Text('Time Slot: ${appointment.timeSlot}'),
+              ],
+            ),
+          ),
+          if (appointment.status != 1) // Add this line
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 25,
+                    margin: const EdgeInsets.all(5), // Add margin
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: MaterialButton(
+                      child: const Text('Accept',
+                          style: TextStyle(color: Colors.white)),
+                      onPressed: () async {
+                        await AppCubit.get(context).updateDoctorStatus("0");
+                        // setState(() {
+                        //   appointment.status = 1;
+                        // });
+                      },
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 25,
+                    margin: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: MaterialButton(
+                      child: const Text('Reject',
+                          style: TextStyle(color: Colors.white)),
+                      onPressed: () async {
+                        // await AppCubit.get(context)
+                        //     .updateDoctorStatus("1");
+                        // setState(() {
+                        //   appointment.status = 1;
+                        // });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
   }
+
+// List<TotalAppointmentsModel> _filteredAppointments() {
+//   return _appointments.where((appointment) {
+//     final nameMatch = appointment['name']!
+//         .toLowerCase()
+//         .contains(_searchName.toLowerCase());
+//     // final phoneMatch = appointment['phone']!.contains(_searchPhone);
+//     return nameMatch;
+//     // && phoneMatch;
+//   }).toList();
+// }
 }

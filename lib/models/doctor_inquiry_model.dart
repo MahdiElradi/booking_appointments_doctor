@@ -1,43 +1,40 @@
-class DoctorInquiryModel {
-  int id;
-  int patientId;
-  int doctorId;
-  DateTime appointmentDate;
-  String appointmentTime;
-  String appointmentStatus;
+class TotalAppointmentsModel {
+  int? appointmentId;
+  String? doctorName;
+  String? patientName;
+  String? createdDate;
+  String? selectedDate;
+  String? timeSlot;
+  int? status;
 
-  DoctorInquiryModel({
-    required this.id,
-    required this.patientId,
-    required this.doctorId,
-    required this.appointmentDate,
-    required this.appointmentTime,
-    required this.appointmentStatus,
-  });
+  TotalAppointmentsModel(
+      {this.appointmentId,
+        this.doctorName,
+        this.patientName,
+        this.createdDate,
+        this.selectedDate,
+        this.timeSlot,
+        this.status,});
 
-  static List<DoctorInquiryModel> fromJsonList(List<dynamic> list) {
-    return list.isEmpty
-        ? []
-        : list.map((e) => DoctorInquiryModel.fromJson(e)).toList();
+  TotalAppointmentsModel.fromJson(Map<String, dynamic> json) {
+    appointmentId = json['appointmentId'];
+    doctorName = json['doctorName'];
+    patientName = json['patientName'];
+    createdDate = json['created_Date'];
+    selectedDate = json['selected_Date'];
+    timeSlot = json['timeSlot'];
+    status = json['status'];
   }
 
-  factory DoctorInquiryModel.fromJson(Map<String, dynamic> json) =>
-      DoctorInquiryModel(
-        id: json["id"],
-        patientId: json["patientId"],
-        doctorId: json["doctorId"],
-        appointmentDate: DateTime.parse(json["appointmentDate"]),
-        appointmentTime: json["appointmentTime"],
-        appointmentStatus: json["appointmentStatus"],
-      );
-
-  Map<String, dynamic> toJson() => {
-        "id": id,
-        "patientId": patientId,
-        "doctorId": doctorId,
-        "appointmentDate":
-            "${appointmentDate.year.toString().padLeft(4, '0')}-${appointmentDate.month.toString().padLeft(2, '0')}-${appointmentDate.day.toString().padLeft(2, '0')}",
-        "appointmentTime": appointmentTime,
-        "appointmentStatus": appointmentStatus,
-      };
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data =  <String, dynamic>{};
+    data['appointmentId'] = appointmentId;
+    data['doctorName'] = doctorName;
+    data['patientName'] = patientName;
+    data['created_Date'] = createdDate;
+    data['selected_Date'] = selectedDate;
+    data['timeSlot'] = timeSlot;
+    data['status'] = status;
+    return data;
+  }
 }

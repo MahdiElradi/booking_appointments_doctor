@@ -220,22 +220,24 @@ class AppCubit extends Cubit<BlocAppStatus<SpecialityModel>> {
   }
 
   // get GetRequest From Patient
-  Future<List<DoctorInquiryModel>> emitGetRequestFromPatient(id) async {
+  Future<List<TotalAppointmentsModel>> getAllAppointments(int id) async {
     var dio = Dio();
-    var response = await dio.request(
-      'https://masoudozel-001-site1.ktempurl.com/api/Doctor/GetRequestFromPatient/$id',
-      options: Options(
-        method: 'GET',
-      ),
-    );
-    if (response.statusCode == 200) {
-      List<DoctorInquiryModel> doctorInquiryModel = [];
-      response.data.forEach((doctor) {
-        doctorInquiryModel.add(DoctorInquiryModel.fromJson(doctor));
-      });
-      return doctorInquiryModel;
-    } else {
-      print(response.statusMessage);
+    try {
+      var response = await dio.get(
+        'https://masoudozel-001-site1.ktempurl.com/api/Doctor/GetTotalAppointments/$id',
+      );
+      if (response.statusCode == 200) {
+        List<TotalAppointmentsModel> appointments = (response.data as List)
+            .map((json) => TotalAppointmentsModel.fromJson(json))
+            .toList();
+        print('Appointments: $appointments');
+        return appointments;
+      } else {
+        print('Error: ${response.statusMessage}');
+        return [];
+      }
+    } catch (e) {
+      print('Exception: $e');
       return [];
     }
   }
