@@ -32,8 +32,8 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
       print('CacheHelper initialized');
 
       // Save data to SharedPreferences
-      await CacheHelper.saveData(key: 'doctorId', value: value.doctorId);
-      print('Saved data: ${value.doctorId}');
+      await CacheHelper.saveData(key: 'doctorId', value: value.id);
+      print('Saved data: ${value.id}');
 
       // Navigate to InquiryScreen
       Navigator.pushReplacement(
@@ -44,7 +44,6 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
       );
 
       print('Login successful');
-      print('Doctor ID: ${value.doctorId}');
     } catch (e) {
       _showErrorDialog(e.toString());
     } finally {

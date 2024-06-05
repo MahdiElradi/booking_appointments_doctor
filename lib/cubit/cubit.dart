@@ -160,31 +160,33 @@ class AppCubit extends Cubit<BlocAppStatus<SpecialityModel>> {
   }
 
   // book appointment
-  Future<void> emitBookAppointment(
-      String doctorId, String date, String time, String token) async {
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': token,
-    };
+
+  Future<dynamic> bookAppointment(
+      int doctorId, int patientId, String date, String timeslot) async {
+    var headers = {'Content-Type': 'application/json'};
     var data = json.encode({
       "doctorId": doctorId,
+      "patientId": patientId,
       "date": date,
-      "time": time,
+      "timeslot": timeslot
     });
     var dio = Dio();
-    var response = await dio.request(
-      'https://masoudozel-001-site1.ktempurl.com/api/Patient/BookAppointment',
-      options: Options(
-        method: 'POST',
-        headers: headers,
-      ),
-      data: data,
-    );
+    try {
+      var response = await dio.post(
+        'https://masoudozel-001-site1.ktempurl.com/api/Patient/BookAppointment',
+        options: Options(
+          headers: headers,
+        ),
+        data: data,
+      );
 
-    if (response.statusCode == 200) {
-      print('Appointment booked successfully');
-    } else {
-      print('Error booking appointment: ${response.statusMessage}');
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        return 'Error: ${response.statusMessage}';
+      }
+    } catch (e) {
+      return 'Request failed with error: $e';
     }
   }
 
@@ -250,26 +252,45 @@ class AppCubit extends Cubit<BlocAppStatus<SpecialityModel>> {
     return dio;
   }
 
-  Future<void> updateDoctorStatus(data) async {
-    emit(BlocAppStatus(status: States.loading));
-    try {
-      var response = await _dio().post(
-        'https://masoudozel-001-site1.ktempurl.com/api/Doctor/UpdateStatus',
-        data: data,
-      );
+  // Future<void> updateDoctorStatus(States) async {
+  //   emit(BlocAppStatus(status: States.loading));
+  //   try {
+  //     var response = await _dio().post(
+  //       'https://masoudozel-001-site1.ktempurl.com/api/Doctor/UpdateStatus',
+  //       data: States,
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       print('Status updated successfully');
+  //       emit(BlocAppStatus(status: States.success, data: response.data));
+  //     } else {
+  //       print('Failed to update status: ${response.statusCode}');
+  //       emit(BlocAppStatus(status: States.error));
+  //     }
+  //   } catch (e) {
+  //     print('Failed to update status: $e');
+  //     emit(BlocAppStatus(status: States.error));
+  //   } finally {
+  //     emit(BlocAppStatus(status: States.idle));
+  //   }
+  // }
+  Future<void> updateDoctorStatus(states) async {
+    var headers = {'Content-Type': 'application/json'};
+    var data = json.encode(states);
+    var dio = Dio();
+    var response = await dio.request(
+      'https://masoudozel-001-site1.ktempurl.com/api/Doctor/UpdateStatus',
+      options: Options(
+        method: 'POST',
+        headers: headers,
+      ),
+      data: data,
+    );
 
-      if (response.statusCode == 200) {
-        print('Status updated successfully');
-        emit(BlocAppStatus(status: States.success, data: response.data));
-      } else {
-        print('Failed to update status: ${response.statusCode}');
-        emit(BlocAppStatus(status: States.error));
-      }
-    } catch (e) {
-      print('Failed to update status: $e');
-      emit(BlocAppStatus(status: States.error));
-    } finally {
-      emit(BlocAppStatus(status: States.idle));
+    if (response.statusCode == 200) {
+      print(json.encode(response.data));
+    } else {
+      print(response.statusMessage);
     }
   }
 }

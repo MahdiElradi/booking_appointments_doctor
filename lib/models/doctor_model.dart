@@ -1,25 +1,21 @@
 class DoctorModel {
-  int? doctorId;
-  bool? isAdmin;
-  bool? isFirstLogin;
+  int? id;
+  String? doctorName;
+  String? speciality;
 
-  DoctorModel({
-    this.doctorId,
-    this.isAdmin,
-    this.isFirstLogin,
-  });
+  DoctorModel({this.id, this.doctorName, this.speciality});
 
   DoctorModel.fromJson(Map<String, dynamic> json) {
-    doctorId = json['doctorId'];
-    isAdmin = json['isAdmin'];
-    isFirstLogin = json['isFirstLogin'];
+    id = json['id'];
+    doctorName = json['doctorName'];
+    speciality = json['speciality'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['doctorId'] = doctorId;
-    data['isAdmin'] = isAdmin;
-    data['isFirstLogin'] = isFirstLogin;
+    final Map<String, dynamic> data = Map<String, dynamic>();
+    data['id'] = id;
+    data['doctorName'] = doctorName;
+    data['speciality'] = speciality;
     return data;
   }
 }

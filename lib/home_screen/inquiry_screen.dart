@@ -25,9 +25,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
   }
 
   Future<void> _fetchAppointments() async {
-    final appointments = await AppCubit.get(context).getAllAppointments(11);
     setState(() {
-      _appointments = appointments;
+      isLogin = true;
+    });
+    final doctorId = await CacheHelper.getData(key: 'doctorId');
+    print('Doctor ID: $doctorId');
+    final appointmentsRes =
+        await AppCubit.get(context).getAllAppointments(doctorId);
+    setState(() {
+      _appointments = appointmentsRes;
+      isLogin = false;
     });
   }
 
@@ -109,13 +116,26 @@ class _InquiryScreenState extends State<InquiryScreen> {
                   ),
                   const SizedBox(height: 20),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _filteredAppointments().length,
-                      itemBuilder: (context, index) {
-                        final appointment = _filteredAppointments()[index];
-                        return buildTotalAppointmentsCard(appointment, context);
-                      },
-                    ),
+                    child: isLogin
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ))
+                        : _filteredAppointments().isEmpty
+                            ? const Center(
+                                child: Text('No Appointments Found',
+                                    style: TextStyle(color: Colors.white)),
+                              )
+                            : ListView.builder(
+                                itemCount: _filteredAppointments().length,
+                                itemBuilder: (context, index) {
+                                  final appointment =
+                                      _filteredAppointments()[index];
+                                  return buildTotalAppointmentsCard(
+                                      appointment, context);
+                                },
+                              ),
                   ),
                 ],
               ),
@@ -144,7 +164,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
               ],
             ),
           ),
-          if (appointment.status != 1) // Add this line
+          if (appointment.status == 0)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -160,10 +180,25 @@ class _InquiryScreenState extends State<InquiryScreen> {
                       child: const Text('Accept',
                           style: TextStyle(color: Colors.white)),
                       onPressed: () async {
-                        await AppCubit.get(context).updateDoctorStatus("0");
-                        // setState(() {
-                        //   appointment.status = 1;
-                        // });
+                        final status = appointment.status;
+                        await AppCubit.get(context)
+                            .updateDoctorStatus(status)
+                            .then((value) {
+                          print('Doctor status updated');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Doctor status updated',
+                                  style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }).onError((error, stackTrace) {
+                          print('Error: $error');
+                          SnackBar(content: Text('Error: $error'));
+                        });
+                        setState(() {
+                          appointment.status = 1;
+                        });
                       },
                     ),
                   ),
@@ -179,13 +214,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                     child: MaterialButton(
                       child: const Text('Reject',
                           style: TextStyle(color: Colors.white)),
-                      onPressed: () async {
-                        // await AppCubit.get(context)
-                        //     .updateDoctorStatus("1");
-                        // setState(() {
-                        //   appointment.status = 1;
-                        // });
-                      },
+                      onPressed: () async {},
                     ),
                   ),
                 ),

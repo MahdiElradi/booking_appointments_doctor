@@ -17,8 +17,8 @@ class BookingScreen extends StatefulWidget {
 
 class _BookingScreenState extends State<BookingScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _dateOfBirthController = TextEditingController();
+  final TextEditingController _selectedDateController = TextEditingController();
+
   final _dateFormatter = DateFormat('yyyy-MM-dd');
   String? _selectedDate;
 
@@ -29,17 +29,16 @@ class _BookingScreenState extends State<BookingScreen> {
 
   final _formKey = GlobalKey<FormState>();
 
-  // final List<String> _dates = ['2024-06-01', '2024-06-02', '2024-06-03'];
   List<String> dates = [];
-  // final List<String> _times = ['10:00 AM', '11:00 AM', '12:00 PM'];
-  List<String> _times = [];
-  // final List<String> _speciality = [];
 
-  // final List<String> _doctor = [];
+  List<String> _times = [];
 
   late List<SpecialityModel> specialityModel = [];
   late List<DoctorsModel> doctorsModel = [];
+  DoctorsModel? docModel;
   bool loading = false;
+  bool _loading = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,10 +82,11 @@ class _BookingScreenState extends State<BookingScreen> {
       if (!mounted) return;
       doctorsModel =
           await BlocProvider.of<AppCubit>(context).emitGetAllDoctors();
-      // if (doctorsModel != null && doctorsModel.isNotEmpty) {
-      //   String doctorId = doctorsModel[0].id.toString();
-      //   getDatesOfDoctors(doctorId);
-      // }
+      for (var doctor in doctorsModel) {
+        if (doctor.doctorName != null && doctor.id != null) {
+          doctorNameToId[doctor.doctorName!] = doctor.id!;
+        }
+      }
     } catch (e) {
       print('Error getting doctors list: $e');
     } finally {
@@ -138,17 +138,68 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  _onSubmit() {}
+  Map<String, int> doctorNameToId = {};
+
+  Future<void> _onSubmit() async {
+    setState(() {
+      _loading = true;
+    });
+    final date = _selectedDate.toString();
+    final time = _selectedTime.toString();
+    final doctor = _selectedDoctor;
+    final doctorId = doctorNameToId[doctor];
+    final patientId = await CacheHelper.getData(key: 'patientId');
+
+    if (doctorId != null && patientId != null && date != null && time != null) {
+      await AppCubit.get(context)
+          .bookAppointment(
+        doctorId,
+        patientId,
+        date,
+        time,
+      )
+          .then((value) {
+        setState(() {
+          _selectedDate = null;
+          _selectedTime = null;
+          _selectedDoctor = null;
+          _selectedSpeciality = null;
+          _nameController.clear();
+          _loading = false;
+        });
+        print('Appointment booked');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment successfully applied.',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }).onError((error, stackTrace) {
+        print('Error booking appointment: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error booking appointment',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      });
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
-    _dateOfBirthController.dispose();
+    _selectedDateController.dispose();
     super.dispose();
   }
 
   final userName = CacheHelper.getData(key: 'userName');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -209,37 +260,11 @@ class _BookingScreenState extends State<BookingScreen> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        icon: Icon(Icons.phone, color: Colors.white),
-                        labelText: 'Phone',
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _dateOfBirthController,
-                      decoration: const InputDecoration(
-                        icon: Icon(Icons.calendar_today, color: Colors.white),
-                        labelText: 'Date of Birth',
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2100),
-                        );
-                        if (date != null) {
-                          _dateOfBirthController.text =
-                              _dateFormatter.format(date);
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter your name';
                         }
+                        return null;
                       },
                     ),
                     const SizedBox(height: 16),
@@ -253,6 +278,12 @@ class _BookingScreenState extends State<BookingScreen> {
                       value: _selectedSpeciality,
                       onChanged: (String? newValue) {
                         _selectedSpeciality = newValue;
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a speciality';
+                        }
+                        return null;
                       },
                       items: specialityModel.map<DropdownMenuItem<String>>(
                           (SpecialityModel value) {
@@ -271,6 +302,12 @@ class _BookingScreenState extends State<BookingScreen> {
                         fillColor: Colors.white,
                       ),
                       value: _selectedDoctor,
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a doctor';
+                        }
+                        return null;
+                      },
                       onChanged: (String? newValue) {
                         _selectedDoctor = newValue;
                       },
@@ -284,13 +321,20 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _dateOfBirthController,
+                      controller: _selectedDateController
+                        ..text = _selectedDate ?? '',
                       decoration: const InputDecoration(
                         icon: Icon(Icons.calendar_today, color: Colors.white),
                         labelText: 'Date',
                         filled: true,
                         fillColor: Colors.white,
                       ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please select a date';
+                        }
+                        return null;
+                      },
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -299,30 +343,13 @@ class _BookingScreenState extends State<BookingScreen> {
                           lastDate: DateTime(2100),
                         );
                         if (date != null) {
-                          _dateOfBirthController.text =
-                              _dateFormatter.format(date);
+                          setState(() {
+                            _selectedDate = _dateFormatter.format(date);
+                          });
+                          getDatesOfDoctors(_selectedDoctor);
                         }
                       },
                     ),
-                    // DropdownButtonFormField<String>(
-                    //   decoration: const InputDecoration(
-                    //     icon: Icon(Icons.calendar_today, color: Colors.white),
-                    //     labelText: 'Date',
-                    //     filled: true,
-                    //     fillColor: Colors.white,
-                    //   ),
-                    //   value: _selectedDate,
-                    //   onChanged: (String? newValue) {
-                    //     _selectedDate = newValue;
-                    //   },
-                    //   items:
-                    //       dates.map<DropdownMenuItem<String>>((String value) {
-                    //     return DropdownMenuItem<String>(
-                    //       value: value,
-                    //       child: Text(value),
-                    //     );
-                    //   }).toList(),
-                    // ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
@@ -331,6 +358,12 @@ class _BookingScreenState extends State<BookingScreen> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a time';
+                        }
+                        return null;
+                      },
                       value: _selectedTime,
                       onChanged: (String? newValue) {
                         _selectedTime = newValue;
@@ -355,7 +388,9 @@ class _BookingScreenState extends State<BookingScreen> {
                           );
                         }
                       },
-                      child: const Text('Submit'),
+                      child: _loading
+                          ? CircularProgressIndicator()
+                          : const Text('Submit'),
                     ),
                   ],
                 ),
